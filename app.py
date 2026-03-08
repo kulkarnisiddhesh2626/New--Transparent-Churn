@@ -5,7 +5,7 @@ import xgboost as xgb
 import joblib
 
 # Load data
-df = pd.read_csv('/Telco-Customer-Churn.csv.csv')
+df = pd.read_csv('sample_customers.csv')
 
 # Clean up
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce').fillna(0)
