@@ -19,11 +19,46 @@ def load_data():
 model = load_model()
 data = load_data()
 
-# --- 2. Title & UI Setup ---
+# --- 2. Sidebar: Author Information ---
+with st.sidebar:
+    st.markdown("### 👨‍💻 About the Author")
+    st.markdown("**Created by:** Siddhesh Kulkarni")
+    st.markdown("📧 [kulkarnisiddhesh2626@gmail.com](mailto:kulkarnisiddhesh2626@gmail.com)")
+    st.markdown("🔗 [LinkedIn Profile](https://www.linkedin.com/in/siddhesh-kulkarni-b2a600207/)")
+    st.markdown("---")
+    st.markdown("### 🛠️ Tech Stack")
+    st.markdown("- Python & Pandas\n- XGBoost\n- SHAP Explainability\n- Streamlit")
+
+# --- 3. Title & UI Setup ---
 st.title("📊 Transparent Churn Predictor & Simulator")
 st.markdown("Predict customer churn, understand the *why*, and simulate retention strategies.")
 
-# Create Tabs for different functionalities
+# --- 4. Expandable Topbar (Project Info & Data) ---
+with st.expander("ℹ️ About the Project & Architecture (Click to Expand)", expanded=False):
+    st.markdown("#### Problem Statement")
+    st.write("Businesses don't just want to know if a customer will leave; they want to know *why*. Most ML models are 'black boxes.' This project delivers a predictive model that explains its own logic to business stakeholders.")
+    
+    st.markdown("#### Architecture Workflow")
+    st.write("- **Data & Feature Engineering:** Uses Telco Churn data with custom metrics like 'Usage-to-Cost Ratio'.")
+    st.write("- **Training:** Gradient Boosted Trees (XGBoost) trained with cross-validation.")
+    st.write("- **Explainability:** SHAP values generate local waterfall plots and global summaries.")
+
+with st.expander("🗂️ Data Preview & Download Report", expanded=False):
+    st.markdown("#### Raw Data Preview")
+    st.dataframe(data.head(10)) # Shows the first 10 rows interactively
+    
+    # Create a downloadable CSV button
+    csv = data.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download Full Dataset (CSV)",
+        data=csv,
+        file_name='churn_sample_data.csv',
+        mime='text/csv',
+    )
+
+st.markdown("---")
+
+# --- 5. Main Dashboard Tabs ---
 tab1, tab2, tab3 = st.tabs(["🔍 Individual Analysis", "🎛️ What-If Simulator", "🌍 Global Insights"])
 
 # --- Tab 1: Original Individual Analysis ---
@@ -76,13 +111,11 @@ with tab2:
     sim_index = st.selectbox("Select a Customer to Simulate:", data.index, key="tab2_select")
     sim_data = data.iloc[[sim_index]].copy()
     
-    # Get baseline
     base_prob = model.predict_proba(sim_data)[0][1] * 100
     
     col_sim1, col_sim2 = st.columns(2)
     
     with col_sim1:
-        # Create sliders for numerical features
         new_monthly = st.slider("Adjust Monthly Charges ($)", 
                                 min_value=15.0, max_value=120.0, 
                                 value=float(sim_data['MonthlyCharges'].values[0]))
@@ -91,21 +124,18 @@ with tab2:
                                min_value=0, max_value=72, 
                                value=int(sim_data['tenure'].values[0]))
         
-        # Apply changes
         sim_data['MonthlyCharges'] = new_monthly
         sim_data['tenure'] = new_tenure
-        # Recalculate our engineered feature
         sim_data['Tenure_to_Monthly_Ratio'] = sim_data['tenure'] / (sim_data['MonthlyCharges'] + 1)
         
     with col_sim2:
-        # Predict with new simulated data
         new_prob = model.predict_proba(sim_data)[0][1] * 100
         diff = new_prob - base_prob
         
         st.metric(label="Simulated Churn Probability", 
                   value=f"{new_prob:.2f}%", 
                   delta=f"{diff:.2f}% (Change from Baseline)",
-                  delta_color="inverse") # Inverse because a decrease in churn risk is GOOD (green)
+                  delta_color="inverse")
         
         st.markdown("*Note: Negative change (Green) means the customer is less likely to churn after your intervention.*")
 
@@ -117,7 +147,6 @@ with tab3:
     if st.button("Generate Global SHAP Plot"):
         with st.spinner("Calculating overall impacts..."):
             explainer = shap.TreeExplainer(model)
-            # Use a sample of 100 rows to keep it fast on the free tier
             shap_values_global = explainer.shap_values(data.head(100)) 
             
             fig2, ax2 = plt.subplots(figsize=(8, 6))
