@@ -6,7 +6,7 @@ import joblib
 import matplotlib.pyplot as plt
 
 # --- 1. Page Config & Load Assets ---
-st.set_page_config(page_title="Transparent Churn Predictor", layout="wide", page_icon="📊")
+st.set_page_config(page_title="Enterprise Churn Predictor", layout="wide", page_icon="📈")
 
 @st.cache_resource
 def load_model():
@@ -19,38 +19,75 @@ def load_data():
 model = load_model()
 data = load_data()
 
-# --- 2. Sidebar: Author Information ---
+# --- 2. Sidebar: Author & Tech Stack (Dropdowns) ---
 with st.sidebar:
-    st.markdown("### 👨‍💻 About the Author")
-    st.markdown("**Created by:** Siddhesh Kulkarni")
-    st.markdown("📧 [kulkarnisiddhesh2626@gmail.com](mailto:kulkarnisiddhesh2626@gmail.com)")
-    st.markdown("🔗 [LinkedIn Profile](https://www.linkedin.com/in/siddhesh-kulkarni-b2a600207/)")
-    st.markdown("---")
-    st.markdown("### 🛠️ Tech Stack")
-    st.markdown("- Python & Pandas\n- XGBoost\n- SHAP Explainability\n- Streamlit")
-
-# --- 3. Title & UI Setup ---
-st.title("📊 Transparent Churn Predictor & Simulator")
-st.markdown("Predict customer churn, understand the *why*, and simulate retention strategies.")
-
-# --- 4. Expandable Topbar (Project Info & Data) ---
-with st.expander("ℹ️ About the Project & Architecture (Click to Expand)", expanded=False):
-    st.markdown("#### Problem Statement")
-    st.write("Businesses don't just want to know if a customer will leave; they want to know *why*. Most ML models are 'black boxes.' This project delivers a predictive model that explains its own logic to business stakeholders.")
+    st.title("Navigation & Info")
     
-    st.markdown("#### Architecture Workflow")
-    st.write("- **Data & Feature Engineering:** Uses Telco Churn data with custom metrics like 'Usage-to-Cost Ratio'.")
-    st.write("- **Training:** Gradient Boosted Trees (XGBoost) trained with cross-validation.")
-    st.write("- **Explainability:** SHAP values generate local waterfall plots and global summaries.")
+    with st.expander("👨‍💻 About the Author", expanded=False):
+        st.markdown("**Created by:** Siddhesh Kulkarni")
+        st.markdown("📧 [kulkarnisiddhesh2626@gmail.com](mailto:kulkarnisiddhesh2626@gmail.com)")
+        st.markdown("🔗 [LinkedIn Profile](https://www.linkedin.com/in/siddhesh-kulkarni-b2a600207/)")
+        st.markdown("💻 [GitHub](https://github.com/)") # Update with your GitHub profile link if desired
+        
+    with st.expander("🛠️ Tech Stack", expanded=False):
+        st.markdown("- **Language:** Python")
+        st.markdown("- **Data Manipulation:** Pandas, NumPy")
+        st.markdown("- **Modeling:** XGBoost (Gradient Boosted Trees)")
+        st.markdown("- **Explainability:** SHAP (Game Theory)")
+        st.markdown("- **Deployment:** Streamlit Community Cloud")
 
-with st.expander("🗂️ Data Preview & Download Report", expanded=False):
-    st.markdown("#### Raw Data Preview")
-    st.dataframe(data.head(10)) # Shows the first 10 rows interactively
+# --- 3. Main Header ---
+st.title("📈 Enterprise Churn Predictor & Retention Simulator")
+st.markdown("Empowering business stakeholders with explainable AI to predict customer churn and simulate retention strategies in real-time.")
+st.markdown("---")
+
+# --- 4. Documentation Section (Detailed Expanders) ---
+st.markdown("### 📖 Project Documentation")
+
+with st.expander("🎯 Problem Statement & Business Value"):
+    st.markdown("""
+    **The Challenge:** Businesses often know *which* customers are likely to leave, but struggle to understand *why*. Traditional machine learning models act as "black boxes," providing predictions without actionable context. 
     
-    # Create a downloadable CSV button
+    **The Solution:** This application bridges the gap between data science and business strategy. It not only predicts the probability of a customer churning but also provides a transparent, mathematical breakdown of the exact factors driving that risk. 
+    
+    **Business Impact:** By understanding the *why*, account managers can deploy targeted retention strategies (e.g., specific discounts, targeted onboarding) rather than relying on generic, costly blanket promotions.
+    """)
+
+with st.expander("🏗️ Project Architecture & Machine Learning Pipeline"):
+    st.markdown("""
+    **1. Data Processing & Feature Engineering:**
+    * Ingests raw subscription data and encodes categorical variables for machine readability.
+    * Engineers advanced business metrics, such as the `Tenure_to_Monthly_Ratio`, to capture 'value for money' sentiment and identify high-flight-risk demographics.
+    
+    **2. Predictive Modeling (The Brain):**
+    * Utilizes **XGBoost (eXtreme Gradient Boosting)**, a state-of-the-art decision tree ensemble model known for high accuracy on complex, tabular data.
+    
+    **3. Explainability Layer (The Translator):**
+    * Integrates **SHAP (SHapley Additive exPlanations)**, a game-theoretic approach to explain the output of any machine learning model.
+    * Converts complex model weights into localized, human-readable waterfall plots to explain individual predictions.
+    """)
+
+with st.expander("📊 About the Dataset & Features"):
+    st.markdown("""
+    **Source:** Telco Customer Churn Dataset.
+    
+    **Key Feature Categories Analyzed by the Model:**
+    * **Demographics:** Gender, Age, Dependents, Partner status.
+    * **Account Information:** Tenure (months), Contract type (Month-to-month vs. Annual), Payment method.
+    * **Service Subscriptions:** Internet service type (Fiber optic vs. DSL), Tech support, Streaming services.
+    * **Financials:** Monthly charges, Total charges.
+    
+    **Custom Engineered Features:**
+    * `Tenure_to_Monthly_Ratio`: Helps identify long-term customers paying high premiums.
+    """)
+
+with st.expander("📥 Data Preview & Download"):
+    st.markdown("Interact with the sample test data used for these predictions. You can sort, scroll, and download the dataset for local analysis.")
+    st.dataframe(data.head(100), use_container_width=True) 
+    
     csv = data.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="📥 Download Full Dataset (CSV)",
+        label="📥 Download Full Test Dataset (CSV)",
         data=csv,
         file_name='churn_sample_data.csv',
         mime='text/csv',
@@ -80,7 +117,6 @@ with tab1:
             else:
                 st.success(f"Low Flight Risk: **{risk_score:.2f}%**")
                 
-            # Recommendation Engine
             explainer = shap.TreeExplainer(model)
             shap_values = explainer(customer_data)
             impacts = sorted(zip(customer_data.columns, shap_values.values[0]), key=lambda x: x[1], reverse=True)
